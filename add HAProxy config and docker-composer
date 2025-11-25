@@ -1,0 +1,85 @@
+version: '3.8'
+services:
+  app1:
+    build: .
+    container_name: app1
+    environment:
+      - INSTANCE_ID=app1
+    expose:
+      - "3000"
+    restart: on-failure
+
+  app2:
+    build: .
+    container_name: app2
+    environment:
+      - INSTANCE_ID=app2
+    expose:
+      - "3000"
+    restart: on-failure
+
+  app3:
+    build: .
+    container_name: app3
+    environment:
+      - INSTANCE_ID=app3
+    expose:
+      - "3000"
+    restart: on-failure
+
+  haproxy:
+    image: haproxy:2.6
+    container_name: shopnow-haproxy
+    volumes:
+      - ./haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    ports:
+      - "8080:8080"
+      - "8081:8081"
+    depends_on:
+      - app1
+      - app2
+      - app3
+
+networks:
+  default:
+    name: shopnow-net
+
+
+
+
+
+
+global
+    log stdout format raw daemon
+    maxconn 4096
+
+defaults
+    log     global
+    mode    http
+    option  httplog
+    option  dontlognull
+    timeout connect 5s
+    timeout client  30s
+    timeout server  30s
+
+frontend http-in-rr
+    bind *:8080
+    default_backend shopnow_rr
+
+frontend http-in-lc
+    bind *:8081
+    default_backend shopnow_lc
+
+backend shopnow_rr
+    balance roundrobin
+    option httpchk GET /health
+    server app1 app1:3000 check
+    server app2 app2:3000 check
+    server app3 app3:3000 check
+
+backend shopnow_lc
+    balance leastconn
+    option httpchk GET /health
+    server app1 app1:3000 check
+    server app2 app2:3000 check
+    server app3 app3:3000 check
