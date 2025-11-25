@@ -1,0 +1,34 @@
+json
+
+{
+  "name": "shopnow-demo",
+  "version": "1.0.0",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
+
+js
+
+const express = require('express');
+const app = express();
+const instance = process.env.INSTANCE_ID || 'unknown';
+const port = process.env.PORT || 3000;
+
+app.get('/', (req, res) => {
+  res.json({
+    instance,
+    pid: process.pid,
+    now: new Date().toISOString(),
+    url: req.originalUrl
+  });
+});
+
+app.get('/health', (req, res) => res.send('OK'));
+
+app.listen(port, () => console.log(`Instance ${instance} listening on ${port}`));
+
